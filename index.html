@@ -1,0 +1,322 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            margin: 0;
+            background-color: #f0f0f0;
+        }
+        
+        .container {
+            background-color: #fff;
+            padding: 20px;
+            border-radius: 10px;
+            border: 2px solid #007BFF;
+            box-shadow: 0px 4px 6px rgba(0, 0, 0, 0.1);
+            text-align: center;
+            width: 400px;
+        }
+        
+        h1 {
+            margin-bottom: 20px;
+            color: #8B4513;
+            font-size: 24px;
+        }
+        
+        form {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+        
+        label, input, select {
+            margin: 10px 0;
+            color: #007BFF;
+        }
+        
+        .slider-container {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            width: 100%;
+        }
+        
+        .slider {
+            width: 100%;
+            appearance: none;
+            background: linear-gradient(to right, #007BFF, #f0f0f0);
+            height: 5px;
+            outline: none;
+            opacity: 0.7;
+            border-radius: 10px;
+            margin: 10px 0;
+        }
+        
+        .slider::-webkit-slider-thumb {
+            appearance: none;
+            width: 20px;
+            height: 20px;
+            border-radius: 50%;
+            background: #007BFF;
+            cursor: pointer;
+        }
+        
+        .slider::-moz-range-thumb {
+            width: 20px;
+            height: 20px;
+            border-radius: 50%;
+            background: #007BFF;
+            cursor: pointer;
+        }
+        
+        .slider-scale {
+            width: 100%;
+            display: flex;
+            justify-content: space-between;
+            color: #555;
+        }
+        
+        button {
+            padding: 10px 20px;
+            background-color: #007BFF;
+            color: #fff;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            transition: background-color 0.3s ease;
+        }
+        
+        button:hover {
+            background-color: #0056b3;
+        }
+        
+        #result {
+            margin-top: 20px;
+        }
+        
+        .input-box {
+            border-radius: 5px;
+            padding: 8px;
+        }
+        
+        .input-label {
+            color: #00cc00;
+        }
+        
+        .input-field {
+            border: 2px solid #00cc00;
+            padding: 4px;
+        }
+        
+        #chart-container {
+            margin-top: 20px;
+        }
+
+        .dark-bold {
+            font-weight: bold;
+            color: #333;
+        }
+    </style>
+    <title>EMI Calculator</title>
+</head>
+<body>
+    <div class="container">
+        <h1>EMI Calculator</h1>
+        <form id="emi-form">
+            <div class="slider-container">
+                <label for="principal" class="input-label">Principal Amount (₹):</label>
+                <input type="number" id="principal" step="0.01" required class="input-field">
+            </div>
+            
+            <div class="slider-container">
+                <input type="range" id="principal-scale" min="0" max="10000000" step="1000" class="slider">
+                <div class="slider-scale">
+                    <span>0</span>
+                    <span>1 Cr</span>
+                </div>
+            </div>
+            
+            <div class="slider-container">
+                <label for="interest" class="input-label">Interest Rate (%):</label>
+                <input type="number" id="interest" step="0.01" required class="input-field">
+            </div>
+            
+            <div class="slider-container">
+                <input type="range" id="interest-scale" min="0" max="100" step="0.1" class="slider">
+                <div class="slider-scale">
+                    <span>0%</span>
+                    <span>100%</span>
+                </div>
+            </div>
+            
+            <div class="slider-container">
+                <label for="tenure" class="input-label">Loan Tenure:</label>
+                <input type="number" id="tenure" step="0.01" required class="input-field">
+                <select id="tenure-type" class="input-field">
+                    <option value="years">Years</option>
+                    <option value="months">Months</option>
+                </select>
+            </div>
+            
+            <div class="slider-container">
+                <input type="range" id="tenure-scale" min="0" max="20" step="0.1" class="slider">
+                <div class="slider-scale">
+                    <span>0</span>
+                    <span>20</span>
+                </div>
+            </div>
+            
+            <div class="slider-container">
+                <label for="fees" class="input-label">Other Fees (₹):</label>
+                <input type="number" id="fees" step="0.01" required class="input-field">
+            </div>
+            
+            <button type="submit">Calculate EMI</button>
+        </form>
+        <div id="result"></div>
+    </div>
+    <div id="chart-container">
+        <canvas id="chart" width="200" height="200"></canvas>
+    </div>
+    
+    <script>
+        const emiForm = document.getElementById("emi-form");
+        const resultDiv = document.getElementById("result");
+        const chartCanvas = document.getElementById("chart");
+        const chartCtx = chartCanvas.getContext("2d");
+        const principalInput = document.getElementById("principal");
+        const principalScale = document.getElementById("principal-scale");
+        const interestInput = document.getElementById("interest");
+        const interestScale = document.getElementById("interest-scale");
+        const tenureInput = document.getElementById("tenure");
+        const tenureScale = document.getElementById("tenure-scale");
+        
+        principalScale.addEventListener("input", function () {
+            principalInput.value = principalScale.value;
+        });
+        
+        principalInput.addEventListener("input", function () {
+            principalScale.value = principalInput.value;
+        });
+        
+        interestScale.addEventListener("input", function () {
+            interestInput.value = interestScale.value;
+        });
+        
+        interestInput.addEventListener("input", function () {
+            interestScale.value = interestInput.value;
+        });
+        
+        tenureScale.addEventListener("input", function () {
+            tenureInput.value = tenureScale.value;
+            updateTenureScaleLabel();
+        });
+        
+        tenureInput.addEventListener("input", function () {
+            tenureScale.value = tenureInput.value;
+            updateTenureScaleLabel();
+        });
+        
+        function updateTenureScaleLabel() {
+            const selectedTenureType = document.getElementById("tenure-type").value;
+            const newScaleValue = selectedTenureType === "years" ? tenureInput.value : (tenureInput.value / 12);
+            tenureScale.value = newScaleValue;
+        }
+        
+        function formatCurrency(amount) {
+            const formatter = new Intl.NumberFormat("en-IN", {
+                style: "currency",
+                currency: "INR",
+                minimumFractionDigits: 2,
+            });
+            return formatter.format(amount);
+        }
+        
+        function updateChart(principalPercentage, interestPercentage) {
+            const chartData = {
+                labels: ["Principal Amount", "Total Interest"],
+                datasets: [{
+                    data: [principalPercentage, interestPercentage],
+                    backgroundColor: ["#007BFF", "#00cc00"],
+                    borderWidth: 0
+                }]
+            };
+        
+            if (window.myChart) {
+                window.myChart.data = chartData;
+                window.myChart.update();
+            } else {
+                window.myChart = new Chart(chartCtx, {
+                    type: "doughnut",
+                    data: chartData,
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        plugins: {
+                            legend: {
+                                labels: {
+                                    fontColor: "#000", // Set legend text color
+                                },
+                            },
+                        },
+                        tooltips: {
+                            callbacks: {
+                                label: function (tooltipItem, data) {
+                                    const label = data.labels[tooltipItem.index];
+                                    const value = data.datasets[0].data[tooltipItem.index];
+                                    const total = data.datasets[0].data.reduce((acc, cur) => acc + cur);
+                                    const percentage = ((value / total) * 100).toFixed(2);
+                                    return `${label}: ₹${value.toFixed(2)} (${percentage}%)`;
+                                },
+                            },
+                        },
+                    },
+                });
+            }
+        }
+        
+        emiForm.addEventListener("submit", function (e) {
+            e.preventDefault();
+        
+            const principal = parseFloat(principalInput.value);
+            const interestRate = parseFloat(interestInput.value);
+            const loanTenure = parseFloat(tenureInput.value);
+            const tenureType = document.getElementById("tenure-type").value;
+            const otherFees = parseFloat(document.getElementById("fees").value);
+        
+            const monthlyInterestRate = interestRate / 100 / 12;
+            let totalPayments;
+            if (tenureType === "years") {
+                totalPayments = loanTenure * 12;
+            } else {
+                totalPayments = loanTenure;
+            }
+            
+            const emi = (principal * monthlyInterestRate * Math.pow(1 + monthlyInterestRate, totalPayments)) /
+                        (Math.pow(1 + monthlyInterestRate, totalPayments) - 1);
+        
+            const totalEMI = emi + otherFees;
+            const totalInterestPayable = totalEMI * totalPayments - principal;
+            const totalPayment = principal + totalInterestPayable + otherFees;
+        
+            resultDiv.innerHTML = `
+                <p>EMI Amount: <span class="dark-bold">${formatCurrency(totalEMI)}</span></p>
+                <p>Total Interest Payable: ₹${totalInterestPayable.toFixed(2)}</p>
+                <p>Total Payment: ₹${totalPayment.toFixed(2)}</p>
+            `;
+            
+            const principalPercentage = (principal / totalPayment) * 100;
+            const interestPercentage = (totalInterestPayable / totalPayment) * 100;
+            updateChart(principalPercentage, interestPercentage);
+        });
+    </script>
+</body>
+</html>
